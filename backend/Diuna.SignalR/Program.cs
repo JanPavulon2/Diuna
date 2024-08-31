@@ -1,5 +1,3 @@
-using Diuna.SignalR.Hubs;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
@@ -12,7 +10,7 @@ builder.Services.AddSignalR();
 // Add CORS services
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddPolicy("AllowAllOrigins", builder =>
     {
         builder.AllowAnyOrigin()
                .AllowAnyMethod()
@@ -37,7 +35,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Use CORS if needed to allow connections from the frontend
-app.UseCors();
+app.UseCors("AllowAllOrigins");
 
 app.UseHttpsRedirection();
 

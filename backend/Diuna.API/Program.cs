@@ -11,13 +11,13 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
+    options.AddPolicy("AllowSpecificOrigins",
+        builder =>
         {
-            policy
-                .WithOrigins("http://localhost:3000")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
+            builder.WithOrigins("http://localhost:3000")
+                   .AllowAnyMethod()
+                   .AllowAnyHeader()
+                   .AllowCredentials();
         });
 });
 
@@ -32,7 +32,7 @@ if (OperatingSystem.IsLinux())
 {
     builder.Services.AddSingleton<IGpioService, GpioService>();
 }
-else if(OperatingSystem.IsWindows())
+else if (OperatingSystem.IsWindows())
 {
     builder.Services.AddSingleton<IGpioService, MockGpioService>();
 }
@@ -43,8 +43,6 @@ builder.Services.AddScoped<ISwitchService, SwitchService>();
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -53,6 +51,8 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+app.UseCors("AllowSpecificOrigins");
+app.UseRouting();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
