@@ -1,0 +1,32 @@
+{
+  "Switches": [
+    {
+      "Name": "Switch1",
+      "ButtonPin": 23,
+      "LedPin": 21,
+      "RelayPin": 26,
+      "IsOn": false
+    },
+    {
+      "Name": "Switch2",
+      "ButtonPin": 18,
+      "LedPin": 20,
+      "RelayPin": 19,
+      "IsOn": true
+    },
+    {
+      "Name": "Switch3",
+      "ButtonPin": 15,
+      "LedPin": 16,
+      "RelayPin": 13,
+      "IsOn": false
+    },
+    {
+      "Name": "Switch4",
+      "ButtonPin": 14,
+      "LedPin": 12,
+      "RelayPin": 6,
+      "IsOn": true
+    }
+  ]
+}

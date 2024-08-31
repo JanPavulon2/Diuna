@@ -1,0 +1,36 @@
+{
+  "Switches": [
+    {
+      "Tag": "Switch1",
+      "ShortName": "Terrarium Bulb",
+      "Description": "Bulb switch for the terrarium",
+      "ButtonPin": 23,
+      "LedPin": 21,
+      "RelayPin": 26
+    },
+    {
+      "Tag": "Switch2",
+      "ShortName": "Top Shelf LED",
+      "Description": "Led strip on the top shelf",
+      "ButtonPin": 18,
+      "LedPin": 20,
+      "RelayPin": 19
+    },
+    {
+      "Tag": "Switch3",
+      "ShortName": "Middle Shelf LED",
+      "Description": "Led strip on the middle shelf",
+      "ButtonPin": 15,
+      "LedPin": 16,
+      "RelayPin": 13
+    },
+    {
+      "Tag": "Switch4",
+      "ShortName": "Low Shelf LED",
+      "Description": "Led strip on the low shelf",
+      "ButtonPin": 14,
+      "LedPin": 12,
+      "RelayPin": 6
+    }
+  ]
+}
