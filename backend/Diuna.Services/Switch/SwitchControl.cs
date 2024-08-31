@@ -1,28 +1,35 @@
+using Diuna.Services.Gpio;
 using System.Device.Gpio;
 using System.Diagnostics;
 
-namespace Diuna.Services
+namespace Diuna.Services.Switch
 {
     // Class to handle classic on/off switch 
     // Switch consists of button, LED and relay
-    public class SwitchControl 
+    public class SwitchControl
     {
-        private readonly GpioController _gpioController;
-        private Stopwatch _debounceTimer;  // Use Stopwatch for debounce
-        private int _debounceTime = 200;   // Debounce time in milliseconds
+        private readonly IGpioService _gpioService;
+        private readonly Stopwatch _debounceTimer;
+        private int _debounceTime = 200;
 
         public string Tag { get; private set; }
         public string ShortName { get; private set; }
         public string Description { get; private set; }
-        
+
         public int ButtonPin { get; private set; }
         public int LedPin { get; private set; }
         public int RelayPin { get; private set; }
+
         public bool IsOn { get; private set; }
 
-        public SwitchControl(string tag, string shortName, string description, int buttonPin, int ledPin, int relayPin, bool isOn)
+        public SwitchControl()
         {
-            _gpioController = new GpioController();
+            _debounceTimer = new Stopwatch();
+        }
+
+        public SwitchControl(IGpioService gpioService, string tag, string shortName, string description, int buttonPin, int ledPin, int relayPin, bool isOn)
+        {
+            _gpioService = gpioService;
             _debounceTimer = new Stopwatch();
 
             Tag = tag;
@@ -32,23 +39,28 @@ namespace Diuna.Services
             ButtonPin = buttonPin;
             LedPin = ledPin;
             RelayPin = relayPin;
+
             IsOn = isOn;
 
-            // Initialize GPIO pins
-            _gpioController.OpenPin(buttonPin, PinMode.InputPullUp);  // Button with pull-up resistor
-            _gpioController.OpenPin(ledPin, PinMode.Output);          // LED pin
-            _gpioController.OpenPin(relayPin, PinMode.Output);        // Relay pin
+            InitializePins();
+        }
 
-            // Set initial state
-            Set(IsOn);
+        private void InitializePins()
+        {
+
+            _gpioService.InitializePin(ButtonPin, PinMode.InputPullUp);
+            _gpioService.InitializePin(LedPin, PinMode.Output);
+            _gpioService.InitializePin(RelayPin, PinMode.Output);
+
+            Set(IsOn); // Set initial state
         }
 
         // Setup button event handler
         public void SetupButtonHandler()
         {
-             Console.WriteLine($"Setting up button handler for '{ShortName}' on GPIO {ButtonPin}");
+            Console.WriteLine($"Setting up button handler for '{ShortName}' on GPIO {ButtonPin}");
 
-            _gpioController.RegisterCallbackForPinValueChangedEvent(ButtonPin, PinEventTypes.Falling, (sender, args) =>
+            _gpioService.RegisterButtonPressCallback(ButtonPin, (sender, args) =>
             {
                 if (_debounceTimer.ElapsedMilliseconds > _debounceTime)
                 {
@@ -69,32 +81,33 @@ namespace Diuna.Services
 
         public void Toggle()
         {
-            IsOn = !IsOn;
-            Set(IsOn);
+            Set(!IsOn);
+        }
+
+        public void TurnOn()
+        {
+            Set(true);
+        }
+
+        public void TurnOff()
+        {
+            Set(false);
         }
 
         public void Set(bool on)
         {
             if (on)
             {
-                _gpioController.Write(RelayPin, PinValue.Low);   // Relay active-low: ON when set to Low
-                _gpioController.Write(LedPin, PinValue.High);    // LED active-high: ON when set to High
+                _gpioService.WritePin(RelayPin, PinValue.Low);   // Relay active-low: ON when set to Low
+                _gpioService.WritePin(LedPin, PinValue.High);    // LED active-high: ON when set to High
             }
             else
             {
-                _gpioController.Write(RelayPin, PinValue.High);  // Relay OFF
-                _gpioController.Write(LedPin, PinValue.Low);     // LED OFF
+                _gpioService.WritePin(RelayPin, PinValue.High);  // Relay OFF
+                _gpioService.WritePin(LedPin, PinValue.Low);     // LED OFF
             }
-        }
 
-        public void TurnOn()
-        {
-            Set(true);    
-        }
-
-        public void TurnOff()
-        {
-            Set(false);
+            IsOn = on;
         }
     }
 }

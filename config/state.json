@@ -1,0 +1,10 @@
+{
+  "Switch3": {
+    "Tag": "Switch3",
+    "IsOn": false
+  },
+  "Switch2": {
+    "Tag": "Switch2",
+    "IsOn": true
+  }
+}

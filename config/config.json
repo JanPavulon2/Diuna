@@ -1,0 +1,36 @@
+{
+  "Switches": [
+    {
+      "Tag": "Switch1",
+      "Description": "Main light switch for the terrarium",
+      "ShortName": "Terrarium Light",
+      "ButtonPin": 23,
+      "LedPin": 21,
+      "RelayPin": 26
+    },
+    {
+      "Tag": "Switch2",
+      "Description": "Switch for the room's main lighting",
+      "ShortName": "Room Light",
+      "ButtonPin": 18,
+      "LedPin": 20,
+      "RelayPin": 19
+    },
+    {
+      "Tag": "Switch3",
+      "Description": "Switch for the top shelf LED strip",
+      "ShortName": "Top Shelf LED",
+      "ButtonPin": 15,
+      "LedPin": 16,
+      "RelayPin": 13
+    },
+    {
+      "Tag": "Switch4",
+      "Description": "Switch for the bottom shelf LED strip",
+      "ShortName": "Bottom Shelf LED",
+      "ButtonPin": 14,
+      "LedPin": 12,
+      "RelayPin": 6
+    }
+  ]
+}
