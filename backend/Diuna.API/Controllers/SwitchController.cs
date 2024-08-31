@@ -1,5 +1,6 @@
 using Diuna.Services.Switch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -30,7 +31,7 @@ public class SwitchController : ControllerBase
     [HttpPost("{tag}/toggle")]
     public IActionResult ToggleSwitch(string tag)
     {
-        _switchService.ToggleSwitch(tag);
+        _switchService.ToggleSwitchAsync(tag);
         return NoContent();
     }
 

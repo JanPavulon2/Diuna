@@ -1,0 +1,6 @@
+@Diuna.SignalR_HostAddress = http://localhost:5103
+
+GET {{Diuna.SignalR_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
