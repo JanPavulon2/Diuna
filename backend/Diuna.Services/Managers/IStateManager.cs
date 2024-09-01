@@ -5,7 +5,7 @@ namespace Diuna.Services.Managers;
 public interface IStateManager
 {
     SwitchState GetStateByTag(string tag);
-    void UpdateState(string tag, bool isOn);
-    void SaveState();
-    void LoadState();
+    void UpdateInMemoryState(string tag, bool isOn);
+    void SaveStateToFile();
+    void LoadState(Dictionary<string, SwitchState> defaultState);
 }

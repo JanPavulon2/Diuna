@@ -1,39 +1,48 @@
 using Diuna.Services.Helpers;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Diuna.Services.Managers;
-public partial class ConfigManager : IConfigManager
+
+public class ConfigManager : IConfigManager
 {
     private readonly string _configFilePath;
-    public List<SwitchConfig> Switches { get; set; }
+    private readonly ILogger<ConfigManager> _logger;
 
-    public ConfigManager()
-    { 
-        // Construct the path to the config file in the Diuna\config directory
+    public List<SwitchConfig> Switches { get; private set; }
+
+    public ConfigManager(ILogger<ConfigManager> logger)
+    {  
         var solutionDirectory = PathHelper.GetSolutionDirectory();
         _configFilePath = Path.Combine(solutionDirectory, "config", "config.json");
-
-        LoadConfig();
+        _logger = logger;
     }
 
     public void LoadConfig()
     {
-        if (File.Exists(_configFilePath))
+        try
         {
-            var fileFullPath = Path.GetFullPath(_configFilePath);
-            Console.WriteLine($"Loading config from file: {fileFullPath}");
+            if (File.Exists(_configFilePath))
+            {
+                _logger.LogInformation($"Loading configuration from {_configFilePath}.");
 
-            var configJson = File.ReadAllText(_configFilePath);
-            var config = JsonSerializer.Deserialize<ConfigData>(configJson);
-            Switches = config.Switches;
+                var configJson = File.ReadAllText(_configFilePath);
+                var configData = JsonSerializer.Deserialize<ConfigData>(configJson);
+                Switches = configData.Switches ?? GetDefaultConfig();
 
-            Console.WriteLine("Config loaded successfully.");
+                _logger.LogInformation("Configuration loaded successfully.");
+            }
+            else
+            {
+                _logger.LogWarning($"Config file not found at {_configFilePath}. Using default configuration.");
+                Switches = GetDefaultConfig();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Config file not found. Using default settings.");
-            Switches = new List<SwitchConfig>(); // Start with an empty list if no config file is found
-
+            _logger.LogError(ex, "Error loading configuration.");
+            throw new ApplicationException("Failed to load configuration.", ex);
+        }
             // Default config with 4 switches
             //Switches = new List<SwitchConfig>
             //    {
@@ -41,57 +50,33 @@ public partial class ConfigManager : IConfigManager
             //        new SwitchConfig { Tag = "Switch2", ButtonPin = 11, LedPin = 20, RelayPin = 19 },
             //        new SwitchConfig { Tag = "Switch3", ButtonPin = 9, LedPin = 16, RelayPin = 13 },
             //        new SwitchConfig { Tag = "Switch4", ButtonPin = 10, LedPin = 12, RelayPin = 6 }
-            //    };
-
-            //SaveConfig();
-        }
+            //    };    
     }
 
     public void SaveConfig()
     {
-        // Define file path (saving to home directory in this example)
-        //string _configFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "config.json");
-
-        Console.WriteLine($"Saving current state to {_configFilePath}");
-
-        var config = new ConfigData { Switches = Switches };
-        var configJson = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-        
-        // Ensure the directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(_configFilePath));
-
         try
         {
+            var configData = new ConfigData { Switches = Switches };
+            var configJson = JsonSerializer.Serialize(configData, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_configFilePath, configJson);
-            Console.WriteLine("Config successfully saved.");
+            _logger.LogInformation("Configuration saved successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save config: {ex.Message}");
+            _logger.LogError(ex, "Error saving configuration.");
+            throw new ApplicationException("Failed to save configuration.", ex);
         }
     }
 
-    /// <summary>
-    /// Adds or updates a switch configuration and saves the changes to the file.
-    /// </summary>
-    /// <param name="switchConfig">The switch configuration to add or update.</param>
-    public void AddOrUpdateSwitchConfig(SwitchConfig switchConfig)
+    private List<SwitchConfig> GetDefaultConfig()
     {
-        var existingConfig = Switches.Find(s => s.Tag == switchConfig.Tag);
-        if (existingConfig != null)
-        {
-            // Update existing configuration
-            existingConfig.Description = switchConfig.Description;
-            existingConfig.ShortName = switchConfig.ShortName;
-            existingConfig.ButtonPin = switchConfig.ButtonPin;
-            existingConfig.LedPin = switchConfig.LedPin;
-            existingConfig.RelayPin = switchConfig.RelayPin;
-        }
-        else
-        {
-            // Add new configuration
-            Switches.Add(switchConfig);
-        }
-        SaveConfig(); // Save the updated configuration to the file
+        return new List<SwitchConfig>
+            {
+                new SwitchConfig { Tag = "Switch1", Description = "Bulb switch for the terrarium", ShortName = "Terrarium Bulb", ButtonPin = 23, LedPin = 21, RelayPin = 26 },
+                new SwitchConfig { Tag = "Switch2", Description = "LED Strip 1", ShortName = "LED Strip 1", ButtonPin = 18, LedPin = 20, RelayPin = 19 },
+                new SwitchConfig { Tag = "Switch3", Description = "LED Strip 2", ShortName = "LED Strip 2", ButtonPin = 15, LedPin = 16, RelayPin = 13 },
+                new SwitchConfig { Tag = "Switch4", Description = "LED Strip 3", ShortName = "LED Strip 3", ButtonPin = 14, LedPin = 12, RelayPin = 6 }
+            };
     }
 }

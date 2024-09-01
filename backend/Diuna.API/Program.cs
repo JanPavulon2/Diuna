@@ -37,11 +37,23 @@ else if (OperatingSystem.IsWindows())
     builder.Services.AddSingleton<IGpioService, MockGpioService>();
 }
 
-builder.Services.AddScoped<IConfigManager, ConfigManager>();
-builder.Services.AddScoped<IStateManager, StateManager>();
-builder.Services.AddScoped<ISwitchService, SwitchService>();
+//builder.Services.AddScoped<IConfigManager, ConfigManager>();
+//builder.Services.AddScoped<IStateManager, StateManager>();
+builder.Services.AddSingleton<IStateManager, StateManager>();
+builder.Services.AddSingleton<IConfigManager, ConfigManager>();
+
+builder.Services.AddSingleton<ISwitchService, SwitchService>();
+
+builder.Services.AddHostedService<StateSaveBackgroundService>();
 
 var app = builder.Build();
+
+// Explicitly call the Initialize method within a scope
+using (var scope = app.Services.CreateScope())
+{
+    var switchService = scope.ServiceProvider.GetRequiredService<ISwitchService>();
+    switchService.Initialize();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
