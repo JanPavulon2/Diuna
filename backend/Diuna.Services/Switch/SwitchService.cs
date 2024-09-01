@@ -1,12 +1,12 @@
 using AutoMapper;
-using Diuna.Services.State;
 using Diuna.Services.Gpio;
 using Diuna.Services.Managers;
-using Diuna.Services.Switch;
 using Microsoft.AspNetCore.SignalR;
 using Diuna.SignalR.Hubs;
 using System.Device.Gpio;
 using Microsoft.Extensions.Logging;
+
+namespace Diuna.Services.Switch;
 
 public class SwitchService : ISwitchService
 {
@@ -15,6 +15,7 @@ public class SwitchService : ISwitchService
     private readonly IHubContext<SwitchHub> _hubContext;
     private readonly IGpioService _gpioService;
     private readonly ILogger<SwitchService> _logger;
+    private readonly IMapper _mapper;
 
     private readonly List<SwitchControl> _switches;
 
@@ -32,46 +33,60 @@ public class SwitchService : ISwitchService
         _stateManager = stateManager;
         _logger = logger;
         _switches = new List<SwitchControl>();
+        _mapper = mapper;
     }
 
     public void Initialize()
     {
         try
         {
-            _logger.LogInformation("Initializing SwitchService...");
-            _configManager.LoadConfig();
+            _logger.LogInformation("[SwitchService] Initializing...");
+            _configManager.LoadConfigFromFile();
 
-            // Set up default states based on configuration
-            var defaultState = _configManager.Switches.ToDictionary(
-                sc => sc.Tag,
-                sc => new SwitchState
-                {
-                    Tag = sc.Tag,
-                    IsOn = false // Default state for each switch is OFF
-                });
-
-            _stateManager.LoadState(defaultState);
-
+            // Initialize switches based on config and state
             foreach (var switchConfig in _configManager.Switches)
             {
-                var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
-                var switchControl = new SwitchControl(
-                    _gpioService,
-                    switchConfig.Tag,
-                    switchConfig.Description,
-                    switchConfig.ShortName,
-                    switchConfig.ButtonPin,
-                    switchConfig.LedPin,
-                    switchConfig.RelayPin,
-                    switchState.IsOn);
+                var switchControl = _mapper.Map<SwitchControl>(switchConfig);
+                _mapper.Map(_stateManager.GetStateByTag(switchConfig.Tag), switchControl);
 
                 switchControl.SetupButtonHandler();
                 _switches.Add(switchControl);
-                _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
 
+                _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
             }
 
-            _logger.LogInformation("SwitchService initialization completed.");
+            _logger.LogInformation("[SwitchService] Initialization completed.");
+
+            // Set up default states based on configuration
+            //var defaultState = _configManager.Switches.ToDictionary(
+            //    sc => sc.Tag,
+            //    sc => new SwitchState
+            //    {
+            //        Tag = sc.Tag,
+            //        IsOn = false // Default state for each switch is OFF
+            //    });
+
+            //_stateManager.LoadState(defaultState);
+
+            //foreach (var switchConfig in _configManager.Switches)
+            //{
+            //    var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
+            //    var switchControl = new SwitchControl(
+            //        _gpioService,
+            //        switchConfig.Tag,
+            //        switchConfig.Description,
+            //        switchConfig.ShortName,
+            //        switchConfig.ButtonPin,
+            //        switchConfig.LedPin,
+            //        switchConfig.RelayPin,
+            //        switchState.IsOn);
+
+            //    switchControl.SetupButtonHandler();
+            //    _switches.Add(switchControl);
+            //    _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
+
+            //}
+
         }
         catch (Exception ex)
         {
@@ -85,7 +100,7 @@ public class SwitchService : ISwitchService
 
     public SwitchControl GetSwitchByTag(string tag) => _switches.FirstOrDefault(s => s.Tag == tag.ToString());
 
-    public async Task ToggleSwitchAsync(string tag)   
+    public async Task ToggleSwitchAsync(string tag)
     {
         try
         {
@@ -95,16 +110,16 @@ public class SwitchService : ISwitchService
             {
                 switchControl.Toggle();
                 _stateManager.UpdateInMemoryState(tag, isOn);
-                
+
                 _logger.LogInformation($"Switch toggled: {tag} is now {(isOn ? "ON" : "OFF")}");
 
                 _logger.LogInformation($"[Obtaining switch: {tag} configuration]");
                 var switchConfig = _configManager.Switches.FirstOrDefault(s => s.Tag == tag);
-                if (switchConfig == null) 
+                if (switchConfig == null)
                     throw new Exception($"Switch with tag {tag} not found in configuration.");
 
                 _logger.LogInformation($"[Writing {tag} pin information to Raspberry]");
-                
+
                 var pinValue = isOn ? PinValue.Low : PinValue.High;
                 _gpioService.WritePin(switchConfig.RelayPin, pinValue);
 
@@ -124,48 +139,6 @@ public class SwitchService : ISwitchService
             _logger.LogError(ex, $"Error toggling switch {tag}.");
             throw new ApplicationException($"Failed to toggle switch {tag}.", ex);
         }
-
-        //
-        //var switchState = _stateManager.GetStateByTag(tag);
-        //bool isOn = !switchState.IsOn;
-        // Find the corresponding pin configuration and update its state
-        
-
-        // Set GPIO pin value based on the toggled state
-        //var pinValue = isOn ? PinValue.Low : PinValue.High;
-        //_gpioService.WritePin(switchConfig.RelayPin, pinValue);
-
-        // Update state
-        //_stateManager.UpdateInMemoryState(tag, isOn);
-
-        //await _hubContext.Clients.All.SendAsync("ReceiveMessage", tag, isOn);
-        
-        // Notify all clients via SignalR
-        //var switchHub = new SwitchHub(_hubContext);
-        //await switchHub.BroadcastSwitchState(tag, isOn);
-        //await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, isOn);
-
-        //await switchHub.ListConnectedClients();
-
-
-        //await switchHub.BroadcastSwitchState(tag, isOn);
-
-        // await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, isOn);
-
-
-        //if (config != null)
-        //{
-        //    _gpioService.WritePin(config.)
-        //}
-        ////
-        //var switchControl = GetSwitchByTag(tag);
-        //if (switchControl != null)
-        //{
-        //    switchControl.Toggle();
-        //    _stateManager.UpdateState(tag, switchControl.IsOn);
-        //}
-
-        // await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, switchControl.IsOn);
     }
 
     public void TurnOnSwitch(string tag)
@@ -188,6 +161,49 @@ public class SwitchService : ISwitchService
         }
     }
 }
+
+//
+//var switchState = _stateManager.GetStateByTag(tag);
+//bool isOn = !switchState.IsOn;
+// Find the corresponding pin configuration and update its state
+
+
+// Set GPIO pin value based on the toggled state
+//var pinValue = isOn ? PinValue.Low : PinValue.High;
+//_gpioService.WritePin(switchConfig.RelayPin, pinValue);
+
+// Update state
+//_stateManager.UpdateInMemoryState(tag, isOn);
+
+//await _hubContext.Clients.All.SendAsync("ReceiveMessage", tag, isOn);
+
+// Notify all clients via SignalR
+//var switchHub = new SwitchHub(_hubContext);
+//await switchHub.BroadcastSwitchState(tag, isOn);
+//await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, isOn);
+
+//await switchHub.ListConnectedClients();
+
+
+//await switchHub.BroadcastSwitchState(tag, isOn);
+
+// await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, isOn);
+
+
+//if (config != null)
+//{
+//    _gpioService.WritePin(config.)
+//}
+////
+//var switchControl = GetSwitchByTag(tag);
+//if (switchControl != null)
+//{
+//    switchControl.Toggle();
+//    _stateManager.UpdateState(tag, switchControl.IsOn);
+//}
+
+// await _hubContext.Clients.All.SendAsync("SwitchStateChanged", tag, switchControl.IsOn);
+
 
 
 //using System.Collections.Generic;

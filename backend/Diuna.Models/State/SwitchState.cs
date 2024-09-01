@@ -1,4 +1,4 @@
-namespace Diuna.Services.State;
+namespace Diuna.Models.State;
 
 public class SwitchState
 {

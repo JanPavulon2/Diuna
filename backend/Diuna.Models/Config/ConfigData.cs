@@ -1,7 +1,7 @@
-namespace Diuna.Services
+namespace Diuna.Models.Config;
+
+public class ConfigData
 {
-    public class ConfigData
-    {
-        public List<SwitchConfig> Switches { get; set; }
-    }
+    public Settings Settings { get; set; } = new Settings();
+    public List<SwitchConfig> Switches { get; set; }
 }

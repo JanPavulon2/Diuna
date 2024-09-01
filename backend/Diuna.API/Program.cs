@@ -1,5 +1,7 @@
+using Diuna.Services.Background;
 using Diuna.Services.Gpio;
 using Diuna.Services.Managers;
+using Diuna.Services.Switch;
 using Diuna.SignalR.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);

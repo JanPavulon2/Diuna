@@ -1,7 +1,8 @@
+using Diuna.Services.Managers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Diuna.Services.Managers
+namespace Diuna.Services.Background
 {
     public class StateSaveBackgroundService : BackgroundService
     {
