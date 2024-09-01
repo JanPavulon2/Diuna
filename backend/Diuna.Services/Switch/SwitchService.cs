@@ -15,7 +15,7 @@ public class SwitchService : ISwitchService
     private readonly IHubContext<SwitchHub> _hubContext;
     private readonly IGpioService _gpioService;
     private readonly ILogger<SwitchService> _logger;
-    private readonly IMapper _mapper;
+    private readonly IMapper _mapper;  
 
     private readonly List<SwitchControl> _switches;
 
@@ -41,10 +41,10 @@ public class SwitchService : ISwitchService
         try
         {
             _logger.LogInformation("[SwitchService] Initializing...");
-            _configManager.LoadConfigFromFile();
+            _configManager.LoadConfig();
 
             // Initialize switches based on config and state
-            foreach (var switchConfig in _configManager.Switches)
+            foreach(var switchConfig in _configManager.Switches)
             {
                 var switchControl = _mapper.Map<SwitchControl>(switchConfig);
                 _mapper.Map(_stateManager.GetStateByTag(switchConfig.Tag), switchControl);
@@ -100,7 +100,7 @@ public class SwitchService : ISwitchService
 
     public SwitchControl GetSwitchByTag(string tag) => _switches.FirstOrDefault(s => s.Tag == tag.ToString());
 
-    public async Task ToggleSwitchAsync(string tag)
+    public async Task ToggleSwitchAsync(string tag)   
     {
         try
         {
@@ -110,16 +110,16 @@ public class SwitchService : ISwitchService
             {
                 switchControl.Toggle();
                 _stateManager.UpdateInMemoryState(tag, isOn);
-
+                
                 _logger.LogInformation($"Switch toggled: {tag} is now {(isOn ? "ON" : "OFF")}");
 
                 _logger.LogInformation($"[Obtaining switch: {tag} configuration]");
                 var switchConfig = _configManager.Switches.FirstOrDefault(s => s.Tag == tag);
-                if (switchConfig == null)
+                if (switchConfig == null) 
                     throw new Exception($"Switch with tag {tag} not found in configuration.");
 
                 _logger.LogInformation($"[Writing {tag} pin information to Raspberry]");
-
+                
                 var pinValue = isOn ? PinValue.Low : PinValue.High;
                 _gpioService.WritePin(switchConfig.RelayPin, pinValue);
 

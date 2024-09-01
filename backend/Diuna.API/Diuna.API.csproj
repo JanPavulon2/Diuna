@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Diuna.Services\Diuna.Services.csproj" />
-    <ProjectReference Include="..\Diuna.SignalR\Diuna.SignalR.csproj" />
+    <ProjectReference Include="..\Diuna.SignalR\Diuna.SignalR3.csproj" />
   </ItemGroup>
 
 </Project>

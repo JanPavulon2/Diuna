@@ -6,6 +6,6 @@ public interface IConfigManager
 {
     List<SwitchConfig> Switches { get; }
 
-    void LoadConfigFromFile();
+    void LoadConfig();
     void SaveConfig();
 }
