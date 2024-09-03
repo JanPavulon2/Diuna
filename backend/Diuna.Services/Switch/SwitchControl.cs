@@ -25,8 +25,6 @@ public class SwitchControl
     public SwitchControl()
     {
         _debounceTimer = new Stopwatch();
-
-        _gpioService = new MockGpioService();
     }
 
     public SwitchControl(IGpioService gpioService, string tag, string shortName, string description, int buttonPin, int ledPin, int relayPin, bool isOn)
@@ -68,7 +66,7 @@ public class SwitchControl
             {
                 Console.WriteLine($"Button pressed on '{ShortName}'");
                 Toggle();
-                _debounceTimer.Restart();  // Reset the debounce timer
+                _debounceTimer.Restart(); // Reset the debounce timer
             }
         });
 

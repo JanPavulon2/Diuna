@@ -46,8 +46,14 @@ public class SwitchService : ISwitchService
             // Initialize switches based on config and state
             foreach(var switchConfig in _configManager.Switches)
             {
-                var switchControl = _mapper.Map<SwitchControl>(switchConfig);
-                _mapper.Map(_stateManager.GetStateByTag(switchConfig.Tag), switchControl);
+                var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
+
+                var switchControl = new SwitchControl(_gpioService, switchConfig.Tag, switchConfig.ShortName, switchConfig.Description, 
+                switchConfig.ButtonPin, switchConfig.LedPin, switchConfig.RelayPin, switchState.IsOn);
+                
+                //  ) _mapper.Map<SwitchControl>(switchConfig);
+                
+                // _mapper.Map(_stateManager.GetStateByTag(switchConfig.Tag), switchControl);
 
                 switchControl.SetupButtonHandler();
                 _switches.Add(switchControl);

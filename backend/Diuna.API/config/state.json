@@ -1,11 +1,11 @@
 {
   "Switch1": {
     "Tag": "Switch1",
-    "IsOn": false
+    "IsOn": true
   },
   "Switch2": {
     "Tag": "Switch2",
-    "IsOn": false
+    "IsOn": true
   },
   "Switch3": {
     "Tag": "Switch3",
@@ -13,6 +13,6 @@
   },
   "Switch4": {
     "Tag": "Switch4",
-    "IsOn": false
+    "IsOn": true
   }
 }

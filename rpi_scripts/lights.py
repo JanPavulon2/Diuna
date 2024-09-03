@@ -9,12 +9,14 @@ from utilities import load_relay_state, save_relay_state
 config_file = 'config.json'
 relays_state = load_relay_state(config_file)
 
-gpio_pins = {
-    'r1': {'button': 23, 'led': 21, 'relay': 26, 'isOn': relays_state['r1']},
-    'r2': {'button': 18, 'led': 20, 'relay': 19, 'isOn': relays_state['r2']},
-    'r3': {'button': 15, 'led': 16, 'relay': 13, 'isOn': relays_state['r3']},
-    'r4': {'button': 14, 'led': 12, 'relay': 6, 'isOn': relays_state['r4']}
-}
+gpio_pins = {}
+for switch in relays_state['Switches']:
+    gpio_pins[switch['Name']] = {
+        'button': switch['ButtonPin'],
+        'led': switch['LedPin'],
+        'relay': switch['RelayPin'],
+        'isOn': switch['IsOn']
+    }
 
 relays = {}
 for key, pins in gpio_pins.items():
@@ -24,6 +26,22 @@ for key, pins in gpio_pins.items():
         'relay': OutputDevice(pins['relay'], active_high=False),
         'isOn': pins['isOn']
     }
+
+# gpio_pins = {
+#     'r1': {'button': 23, 'led': 21, 'relay': 26, 'isOn': relays_state['r1']},
+#     'r2': {'button': 18, 'led': 20, 'relay': 19, 'isOn': relays_state['r2']},
+#     'r3': {'button': 15, 'led': 16, 'relay': 13, 'isOn': relays_state['r3']},
+#     'r4': {'button': 14, 'led': 12, 'relay': 6, 'isOn': relays_state['r4']}
+# }
+
+# relays = {}
+# for key, pins in gpio_pins.items():
+#     relays[key] = {
+#         'button': Button(pins['button'], pull_up=True),
+#         'led': LED(pins['led']),
+#         'relay': OutputDevice(pins['relay'], active_high=False),
+#         'isOn': pins['isOn']
+#     }
 
 # Set the initial state of relays based on loaded state
 for relay in relays.values():

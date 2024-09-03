@@ -2,6 +2,20 @@
 
 public static class PathHelper
 {
+
+    public static string GetConfigFilePath(string fileName)
+    {
+        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var configPath = Path.Combine(baseDirectory, "config", fileName);
+        
+        if(!File.Exists(configPath))
+        {
+            throw new FileNotFoundException($"Configuration file '{fileName}' not found at '{configPath}'.");
+        }
+
+        return configPath;
+    }
+
     public static string GetSolutionDirectory()
     {
         var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;

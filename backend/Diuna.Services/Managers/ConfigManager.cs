@@ -16,8 +16,9 @@ public class ConfigManager : IConfigManager
 
     public ConfigManager(ILogger<ConfigManager> logger)
     {  
-        var solutionDirectory = PathHelper.GetSolutionDirectory();
-        _configFilePath = Path.Combine(solutionDirectory, "config", "config.json");
+        // var solutionDirectory = PathHelper.GetSolutionDirectory();
+        _configFilePath = PathHelper.GetConfigFilePath("config.json");
+        // Path.Combine(solutionDirectory, "config", "config.json");
         _logger = logger;
 
         _configData = new ConfigData

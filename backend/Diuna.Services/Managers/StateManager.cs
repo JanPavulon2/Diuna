@@ -13,8 +13,9 @@ public class StateManager : IStateManager
 
     public StateManager(ILogger<StateManager> logger)
     {
-        var solutionDirectory = PathHelper.GetSolutionDirectory();
-        _stateFilePath = Path.Combine(solutionDirectory, "config", "state.json");
+        // var solutionDirectory = PathHelper.GetSolutionDirectory();
+        _stateFilePath = PathHelper.GetConfigFilePath("state.json");
+        //Path.Combine(solutionDirectory, "config", "state.json");
 
         _logger = logger;
         _state = new Dictionary<string, SwitchState>();

@@ -4,6 +4,9 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
+# Install necessary GPIO libraries for Raspberry Pi
+RUN apt-get update && apt-get install -y libgpiod-dev
+
 # Use the official ASP.NET Core SDK to build the app
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
@@ -28,4 +31,5 @@ RUN dotnet publish "Diuna.API.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY Diuna.API/config /app/config
 ENTRYPOINT ["dotnet", "Diuna.API.dll"]

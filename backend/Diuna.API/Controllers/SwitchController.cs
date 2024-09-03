@@ -2,6 +2,8 @@ using Diuna.Services.Switch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
+namespace Diuna.API.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 public class SwitchController : ControllerBase
