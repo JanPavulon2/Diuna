@@ -40,7 +40,8 @@ public class SwitchService : ISwitchService
     {
         try
         {
-            _logger.LogInformation("[SwitchService] Initializing...");
+            _logger.LogInformation("Initializing SwitchService...");
+
             _configManager.LoadConfig();
 
             // Initialize switches based on config and state
@@ -48,20 +49,17 @@ public class SwitchService : ISwitchService
             {
                 var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
 
-                var switchControl = new SwitchControl(_gpioService, switchConfig.Tag, switchConfig.ShortName, switchConfig.Description, 
-                switchConfig.ButtonPin, switchConfig.LedPin, switchConfig.RelayPin, switchState.IsOn);
+                var switchControl = new SwitchControl(
+                    _gpioService, switchConfig.Tag, switchConfig.ShortName, switchConfig.Description, 
+                    switchConfig.ButtonPin, switchConfig.LedPin, switchConfig.RelayPin, switchState.IsOn);
                 
-                //  ) _mapper.Map<SwitchControl>(switchConfig);
-                
-                // _mapper.Map(_stateManager.GetStateByTag(switchConfig.Tag), switchControl);
-
                 switchControl.SetupButtonHandler();
                 _switches.Add(switchControl);
 
                 _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
             }
 
-            _logger.LogInformation("[SwitchService] Initialization completed.");
+            _logger.LogInformation("SwitchService initialized.");
 
             // Set up default states based on configuration
             //var defaultState = _configManager.Switches.ToDictionary(
@@ -116,24 +114,25 @@ public class SwitchService : ISwitchService
             {
                 switchControl.Toggle();
                 _stateManager.UpdateInMemoryState(tag, isOn);
-                
-                _logger.LogInformation($"Switch toggled: {tag} is now {(isOn ? "ON" : "OFF")}");
-
-                _logger.LogInformation($"[Obtaining switch: {tag} configuration]");
-                var switchConfig = _configManager.Switches.FirstOrDefault(s => s.Tag == tag);
-                if (switchConfig == null) 
-                    throw new Exception($"Switch with tag {tag} not found in configuration.");
-
-                _logger.LogInformation($"[Writing {tag} pin information to Raspberry]");
-                
-                var pinValue = isOn ? PinValue.Low : PinValue.High;
-                _gpioService.WritePin(switchConfig.RelayPin, pinValue);
-
-                pinValue = isOn ? PinValue.High : PinValue.Low;
-                _gpioService.WritePin(switchConfig.LedPin, pinValue);
-
                 _stateManager.SaveStateToFile();
                 await _hubContext.Clients.All.SendAsync("ReceiveMessage", tag, isOn);
+                _logger.LogInformation($"Switch toggled: {tag} is now {(isOn ? "ON" : "OFF")}");
+
+                //_logger.LogInformation($"[Obtaining switch: {tag} configuration]");
+                //var switchConfig = _configManager.Switches.FirstOrDefault(s => s.Tag == tag);
+                //if (switchConfig == null) 
+                //    throw new Exception($"Switch with tag {tag} not found in configuration.");
+
+                //_logger.LogInformation($"[Writing {tag} pin information to Raspberry]");
+
+                //var pinValue = isOn ? PinValue.Low : PinValue.High;
+                //_gpioService.WritePin(switchConfig.RelayPin, pinValue);
+
+                //pinValue = isOn ? PinValue.High : PinValue.Low;
+                //_gpioService.WritePin(switchConfig.LedPin, pinValue);
+
+                //_stateManager.SaveStateToFile();
+                //
             }
             else
             {
@@ -154,6 +153,7 @@ public class SwitchService : ISwitchService
         {
             switchControl.TurnOn();
             _stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
+            _stateManager.SaveStateToFile();
         }
     }
 
@@ -164,6 +164,7 @@ public class SwitchService : ISwitchService
         {
             switchControl.TurnOff();
             _stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
+            _stateManager.SaveStateToFile();
         }
     }
 }

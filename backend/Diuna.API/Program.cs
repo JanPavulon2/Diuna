@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Diuna.API.Hubs;
+using Diuna.SignalR.Hubs;
 using Diuna.Services.Background;
 using Diuna.Services.Gpio;
 using Diuna.Services.Managers;

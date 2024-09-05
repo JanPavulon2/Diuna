@@ -47,7 +47,6 @@ public class SwitchControl
 
     private void InitializePins()
     {
-
         _gpioService.InitializePin(ButtonPin, PinMode.InputPullUp);
         _gpioService.InitializePin(LedPin, PinMode.Output);
         _gpioService.InitializePin(RelayPin, PinMode.Output);

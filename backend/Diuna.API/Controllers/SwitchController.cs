@@ -25,7 +25,8 @@ public class SwitchController : ControllerBase
     public ActionResult<SwitchControl> GetSwitch(string tag)
     {
         var switchControl = _switchService.GetSwitchByTag(tag);
-        if (switchControl == null) return NotFound();
+        if (switchControl == null) 
+            return NotFound();
 
         return Ok(switchControl);
     }
