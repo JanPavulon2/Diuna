@@ -56,7 +56,8 @@ public class Program2
         byte[] ledPatterns = {
             0b00000010,  // Q1 on (second LED)
             0b00000100,  // Q2 on (third LED)
-            0b00000110   // Q1 and Q2 on (both LEDs)
+            0b00000110,   // Q1 and Q2 on (both LEDs)
+            0b00001000   // Q3 
         };
 
         // Cycle through the patterns
