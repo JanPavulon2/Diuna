@@ -57,7 +57,10 @@ public class Program2
             0b00000010,  // Q1 on (second LED)
             0b00000100,  // Q2 on (third LED)
             0b00000110,   // Q1 and Q2 on (both LEDs)
-            0b00001000   // Q3 
+            0b00001000,    // Q3
+            0b00001010,   // Q3 Q1
+            0b00011010,   // Q3 Q1
+            0b00001110   // Q3 Q2 Q1 
         };
 
         // Cycle through the patterns
@@ -65,6 +68,8 @@ public class Program2
         {
             foreach (var pattern in ledPatterns)
             {
+                Console.WriteLine($"Pattern: {pattern}");
+
                 shiftRegister.ShiftOut(pattern);  // Shift the pattern into the 74HC595
                 Thread.Sleep(1000);  // Wait 1 second between each change
             }
