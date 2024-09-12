@@ -4,7 +4,8 @@ namespace Diuna.Services.Managers;
 
 public interface IConfigManager
 {
-    List<SwitchConfig> Switches { get; }
+    List<SwitchConfig> SwitchesConfig { get; }
+    Settings Settings { get; }
 
     void LoadConfig();
     void SaveConfig();

@@ -1,3 +1,5 @@
+using Diuna.Models.Config;
+using Diuna.Models.State;
 using Diuna.Services.Switch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -16,13 +18,13 @@ public class SwitchController : ControllerBase
     }
 
     [HttpGet]
-    public IEnumerable<SwitchControl> GetSwitches()
+    public IEnumerable<SwitchConfig> GetSwitches()
     {
         return _switchService.GetAllSwitches();
     }
 
     [HttpGet("{tag}")]
-    public ActionResult<SwitchControl> GetSwitch(string tag)
+    public ActionResult<SwitchConfig> GetSwitch(string tag)
     {
         var switchControl = _switchService.GetSwitchByTag(tag);
         if (switchControl == null) 
@@ -30,6 +32,14 @@ public class SwitchController : ControllerBase
 
         return Ok(switchControl);
     }
+
+    [HttpPost("{tag}/setSwitchState/{on}")]
+    public IActionResult SetSwitchState(string tag, bool on)
+    {
+        _switchService.SetSwitchAsync(tag, on);
+        return NoContent();
+    }
+
 
     [HttpPost("{tag}/toggle")]
     public IActionResult ToggleSwitch(string tag)

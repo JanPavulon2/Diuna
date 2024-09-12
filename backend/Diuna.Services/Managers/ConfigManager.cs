@@ -12,7 +12,7 @@ public class ConfigManager : IConfigManager
     private readonly ILogger<ConfigManager> _logger;
 
     public Settings Settings => _configData.Settings;
-    public List<SwitchConfig> Switches => _configData.Switches;
+    public List<SwitchConfig> SwitchesConfig => _configData.Switches;
 
     public ConfigManager(ILogger<ConfigManager> logger)
     {  

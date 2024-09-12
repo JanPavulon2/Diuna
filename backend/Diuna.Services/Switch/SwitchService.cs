@@ -5,19 +5,23 @@ using Microsoft.AspNetCore.SignalR;
 using Diuna.SignalR.Hubs;
 using System.Device.Gpio;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Security.Cryptography.X509Certificates;
+using Diuna.Models.Config;
+using Diuna.Models.State;
 
 namespace Diuna.Services.Switch;
 
 public class SwitchService : ISwitchService
 {
     private readonly IConfigManager _configManager;
-    private readonly IStateManager _stateManager;
+    private readonly IStateManager _state;
     private readonly IHubContext<SwitchHub> _hubContext;
     private readonly IGpioService _gpioService;
     private readonly ILogger<SwitchService> _logger;
-    private readonly IMapper _mapper;  
+    private readonly IMapper _mapper;
 
-    private readonly List<SwitchControl> _switches;
+    //private readonly List<SwitchConfig> _switches;
 
     public SwitchService(
         IHubContext<SwitchHub> hubContext,
@@ -30,10 +34,48 @@ public class SwitchService : ISwitchService
         _hubContext = hubContext;
         _gpioService = gpioService;
         _configManager = configManager;
-        _stateManager = stateManager;
+        _state = stateManager;
         _logger = logger;
-        _switches = new List<SwitchControl>();
+        //_switches = new List<SwitchConfig>();
         _mapper = mapper;
+    }
+
+    private void InitializeSwitchPins(SwitchConfig switchConfig)
+    {
+        Console.WriteLine($"Initializing {switchConfig.Tag} pins. Button: {switchConfig.ButtonPin}, LED: {switchConfig.LedPin}, Relay: {switchConfig.RelayPin}.");
+
+        _gpioService.InitializePin(switchConfig.ButtonPin, PinMode.InputPullUp);
+        _gpioService.InitializePin(switchConfig.LedPin, PinMode.Output);
+        _gpioService.InitializePin(switchConfig.RelayPin, PinMode.Output);
+    }
+
+    private void RegisterSwitchButtonHandler(SwitchConfig switchConfig)
+    {
+        Console.WriteLine($"Registering button handler for '{switchConfig.ShortName}' on GPIO {switchConfig.ButtonPin}");
+
+        var _debounceTimer = new Stopwatch();
+
+        _gpioService.RegisterButtonPressCallback(switchConfig.ButtonPin, async (sender, args) =>
+        {
+            if (_debounceTimer.ElapsedMilliseconds > _configManager.Settings.DebounceTime)
+            {
+                Console.WriteLine($"Button pressed on '{switchConfig.ShortName}'");
+
+                await ToggleSwitchAsync(switchConfig.Tag);
+
+                _debounceTimer.Restart(); // Reset the debounce timer
+            }
+        });
+
+        _debounceTimer.Start();
+
+        //_debounceTimer.Start();  // Start the debounce timer
+
+        // Additionally, register Rising event to see when the button is released
+        //_gpioController.RegisterCallbackForPinValueChangedEvent(ButtonPin, PinEventTypes.Rising, (sender, args) =>
+        //{
+        //    Console.WriteLine($"Button released on {NameTag}");
+        //});
     }
 
     public void Initialize()
@@ -45,128 +87,107 @@ public class SwitchService : ISwitchService
             _configManager.LoadConfig();
 
             // Initialize switches based on config and state
-            foreach(var switchConfig in _configManager.Switches)
+            foreach (var switchConfig in _configManager.SwitchesConfig)
             {
-                var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
+                InitializeSwitchPins(switchConfig);
+                RegisterSwitchButtonHandler(switchConfig);
 
-                var switchControl = new SwitchControl(
-                    _gpioService, switchConfig.Tag, switchConfig.ShortName, switchConfig.Description, 
-                    switchConfig.ButtonPin, switchConfig.LedPin, switchConfig.RelayPin, switchState.IsOn);
-                
-                switchControl.SetupButtonHandler();
-                _switches.Add(switchControl);
+                var switchState = _state.GetStateByTag(switchConfig.Tag);
+
+                SetSwitchAsync(switchConfig, switchState.IsOn);
 
                 _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
             }
 
             _logger.LogInformation("SwitchService initialized.");
-
-            // Set up default states based on configuration
-            //var defaultState = _configManager.Switches.ToDictionary(
-            //    sc => sc.Tag,
-            //    sc => new SwitchState
-            //    {
-            //        Tag = sc.Tag,
-            //        IsOn = false // Default state for each switch is OFF
-            //    });
-
-            //_stateManager.LoadState(defaultState);
-
-            //foreach (var switchConfig in _configManager.Switches)
-            //{
-            //    var switchState = _stateManager.GetStateByTag(switchConfig.Tag);
-            //    var switchControl = new SwitchControl(
-            //        _gpioService,
-            //        switchConfig.Tag,
-            //        switchConfig.Description,
-            //        switchConfig.ShortName,
-            //        switchConfig.ButtonPin,
-            //        switchConfig.LedPin,
-            //        switchConfig.RelayPin,
-            //        switchState.IsOn);
-
-            //    switchControl.SetupButtonHandler();
-            //    _switches.Add(switchControl);
-            //    _logger.LogInformation($"Switch initialized: {switchConfig.Tag} ({switchConfig.ShortName})");
-
-            //}
-
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during SwitchService initialization.");
             throw new ApplicationException("Failed to initialize SwitchService.", ex);
-
         }
     }
 
-    public IEnumerable<SwitchControl> GetAllSwitches() => _switches;
+    public IEnumerable<SwitchConfig> GetAllSwitches() => _configManager.SwitchesConfig;
 
-    public SwitchControl GetSwitchByTag(string tag) => _switches.FirstOrDefault(s => s.Tag == tag.ToString());
+    public SwitchConfig GetSwitchByTag(string tag) => _configManager.SwitchesConfig.FirstOrDefault(s => s.Tag == tag.ToString());
 
-    public async Task ToggleSwitchAsync(string tag)   
+    //        // Additionally, register Rising event to see when the button is released
+    //        //_gpioController.RegisterCallbackForPinValueChangedEvent(ButtonPin, PinEventTypes.Rising, (sender, args) =>
+    //        //{
+    //        //    Console.WriteLine($"Button released on {NameTag}");
+    //        //});
+    //    }
+    public async Task SetSwitchAsync(string tag, bool on)
+    {
+        var switchConfig = GetSwitchByTag(tag);
+        await SetSwitchAsync(switchConfig, on);
+    }
+
+    public async Task SetSwitchAsync(SwitchConfig switchConfig, bool on)
     {
         try
         {
-            var switchControl = GetSwitchByTag(tag);
-            var isOn = !switchControl.IsOn;
-            if (switchControl != null)
+            var currentState = _state.GetStateByTag(switchConfig.Tag);
+
+            if (on)
             {
-                switchControl.Toggle();
-                _stateManager.UpdateInMemoryState(tag, isOn);
-                _stateManager.SaveStateToFile();
-                await _hubContext.Clients.All.SendAsync("ReceiveMessage", tag, isOn);
-                _logger.LogInformation($"Switch toggled: {tag} is now {(isOn ? "ON" : "OFF")}");
-
-                //_logger.LogInformation($"[Obtaining switch: {tag} configuration]");
-                //var switchConfig = _configManager.Switches.FirstOrDefault(s => s.Tag == tag);
-                //if (switchConfig == null) 
-                //    throw new Exception($"Switch with tag {tag} not found in configuration.");
-
-                //_logger.LogInformation($"[Writing {tag} pin information to Raspberry]");
-
-                //var pinValue = isOn ? PinValue.Low : PinValue.High;
-                //_gpioService.WritePin(switchConfig.RelayPin, pinValue);
-
-                //pinValue = isOn ? PinValue.High : PinValue.Low;
-                //_gpioService.WritePin(switchConfig.LedPin, pinValue);
-
-                //_stateManager.SaveStateToFile();
-                //
+                _gpioService.WritePin(switchConfig.RelayPin, PinValue.Low);   // Relay active-low: ON when set to Low
+                _gpioService.WritePin(switchConfig.LedPin, PinValue.High);    // LED active-high: ON when set to High
             }
             else
             {
-                _logger.LogWarning($"Switch with tag {tag} not found.");
+                _gpioService.WritePin(switchConfig.RelayPin, PinValue.High);  // Relay OFF
+                _gpioService.WritePin(switchConfig.LedPin, PinValue.Low);     // LED OFF
+            }
+
+            if (currentState.IsOn != on)
+            {
+                _state.UpdateInMemoryState(currentState.Tag, on);
+                _state.SaveStateToFile();
+
+                await _hubContext.Clients.All.SendAsync("ReceiveMessage", switchConfig.Tag, on);
+                _logger.LogInformation($"Switch toggled: {switchConfig.Tag} is now {(on ? "ON" : "OFF")}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error toggling switch {tag}.");
-            throw new ApplicationException($"Failed to toggle switch {tag}.", ex);
+            _logger.LogError(ex, $"Error toggling switch {switchConfig.Tag}.");
+            throw new ApplicationException($"Failed to toggle switch {switchConfig.Tag}.", ex);
         }
+    }
+
+
+    public async Task ToggleSwitchAsync(string tag)
+    {
+
+        var switchConfig = GetSwitchByTag(tag);
+        var switchState = _state.GetStateByTag(tag);
+        await SetSwitchAsync(switchConfig, !switchState.IsOn);
     }
 
     public void TurnOnSwitch(string tag)
     {
-        var switchControl = GetSwitchByTag(tag);
-        if (switchControl != null)
-        {
-            switchControl.TurnOn();
-            _stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
-            _stateManager.SaveStateToFile();
-        }
+        //var switchConfig = _configManager.SwitchesConfig = GetSwitchByTag(tag);
+        //if (switchControl != null)
+        //{
+        //    //switchControl.TurnOn();
+        //    //_stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
+        //    _stateManager.SaveStateToFile();
+        //}
     }
 
     public void TurnOffSwitch(string tag)
     {
-        var switchControl = GetSwitchByTag(tag);
-        if (switchControl != null)
-        {
-            switchControl.TurnOff();
-            _stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
-            _stateManager.SaveStateToFile();
-        }
+        //var switchControl = GetSwitchByTag(tag);
+        //if (switchControl != null)
+        //{
+        //    //switchControl.TurnOff();
+        //    //_stateManager.UpdateInMemoryState(tag, switchControl.IsOn);
+        //    _stateManager.SaveStateToFile();
+        //}
     }
+
 }
 
 //

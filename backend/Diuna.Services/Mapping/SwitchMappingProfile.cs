@@ -9,8 +9,6 @@ public class SwitchMappingProfile : Profile
 {
     public SwitchMappingProfile()
     {
-        CreateMap<SwitchConfig, SwitchControl>();
-        CreateMap<SwitchState, SwitchControl>()
-            .ForMember(dest => dest.IsOn, opt => opt.MapFrom(src => src.IsOn));
+        
     }
 }

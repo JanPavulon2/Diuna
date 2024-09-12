@@ -8,6 +8,7 @@ namespace Diuna.Services.Switch;
 // Switch consists of button, LED and relay
 public class SwitchControl
 {
+    /*
     private readonly IGpioService _gpioService;
     private readonly Stopwatch _debounceTimer;
     private int _debounceTime = 200;
@@ -107,5 +108,5 @@ public class SwitchControl
         }
 
         IsOn = on;
-    }
+    }*/
 }
